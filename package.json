@@ -1,0 +1,14 @@
+{
+  "name": "ucusa-hazir",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "THY öncelikli açık kaynak yolcu hazırlık asistanı",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test"
+  }
+}

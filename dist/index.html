@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#18283f">
+  <meta name="description" content="Rotana, biletine ve ihtiyaçlarına göre kişisel uçuş hazırlık listeni oluştur. THY öncelikli, açık kaynak yolcu asistanı.">
+  <title>Uçuşa Hazır — Yolculuğun için bir plan</title>
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <a href="./" class="brand" aria-label="Uçuşa Hazır ana sayfa"><span class="brand-icon" aria-hidden="true">↗</span><span>Uçuşa<span class="brand-light">Hazır</span><small>YOLCU ASİSTANI</small></span></a>
+      <nav aria-label="Ana menü"><a href="#planner" class="nav-active">Yolculuğum</a><a href="#about">Nasıl çalışır?</a><a href="https://github.com/ubeydgencer/ucusa-hazir" target="_blank" rel="noopener noreferrer" class="github-link">GitHub <span aria-hidden="true">↗</span></a></nav>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container hero-inner">
+        <div class="hero-copy"><p class="eyebrow"><span></span> DAHA RAHAT BİR YOLCULUK</p><h1>Biletin hazır.<br><em>Peki ya sen?</em></h1><p class="hero-description">Rotanı, biletini ve ihtiyaçlarını ekle.<br>Bagajdan aktarmaya, sana özel bir hazırlık listesi oluştur.</p><a class="hero-action" href="#planner">Yolculuğumu planla <span aria-hidden="true">↓</span></a></div>
+        <div class="journey-art" aria-hidden="true">
+          <div class="art-grid"></div><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+          <svg viewBox="0 0 500 280" fill="none"><path d="M65 210C185 220 255 35 423 78" stroke="#96a7be" stroke-width="2" stroke-dasharray="5 7"/><circle cx="65" cy="210" r="6" fill="#fff"/><circle cx="423" cy="78" r="6" fill="#e63040"/><path d="m270 90 49 16-22 13-1 29-9-22-29-3 12-10z" fill="#fff"/></svg>
+          <div class="art-origin"><b>IST</b><span>BAŞLANGIÇ</span></div><div class="art-destination"><b>Sıradaki durak</b><span>HAZIR BİR YOLCULUK</span></div>
+          <div class="art-note"><span class="small-check">✓</span> Her yolculuk, kendi listesiyle.</div>
+        </div>
+      </div>
+    </section>
+    <div class="container trust-bar"><span><i aria-hidden="true">✓</i> THY öncelikli</span><span><i aria-hidden="true">↗</i> Resmi kaynak bağlantıları</span><span><i aria-hidden="true">◉</i> Bilgilerin tarayıcında</span><span class="trust-version">Açık kaynak · v1.0</span></div>
+
+    <section class="container planner" id="planner" aria-labelledby="planner-title">
+      <div class="section-heading"><div><p class="eyebrow dark">YOLCULUK MASAN</p><h2 id="planner-title">Küçük kontroller. Rahat bir uçuş.</h2></div><div><button id="example" class="text-button" type="button">Örnek yolculuk <span aria-hidden="true">↗</span></button><button id="return-trip" class="text-button" type="button" hidden>Örneği kapat <span aria-hidden="true">↩</span></button></div></div>
+      <div class="workspace">
+        <form id="trip-form" class="trip-form">
+          <fieldset class="form-card"><legend><span class="step-number">01</span> Rotan <span class="legend-note">Nereye uçuyorsun?</span></legend>
+            <div class="field-row route-fields"><label>Kalkış <input id="origin" name="origin" list="airports" maxlength="3" placeholder="IST" pattern="[A-Za-z]{3}" required autocomplete="off"><span class="field-hint" id="origin-label">Üç harfli havalimanı kodu</span></label><span class="route-arrow" aria-hidden="true">→</span><label>Varış <input id="destination" name="destination" list="airports" maxlength="3" placeholder="LHR" pattern="[A-Za-z]{3}" required autocomplete="off"><span class="field-hint" id="destination-label">Üç harfli havalimanı kodu</span></label></div>
+            <datalist id="airports"></datalist>
+            <div class="field-row"><label>Uçuş tarihi <input id="date" name="date" type="date" required></label><label>Kalkış saati <span class="optional">İsteğe bağlı</span><input id="time" name="time" type="time"></label></div>
+            <p class="field-hint">Tarih ve saat, kalkış havalimanının yerel saatidir.</p>
+            <label class="full-field">Uçuş türü <select name="routeType" id="routeType"><option value="auto">Rotadan belirle</option><option value="domestic">Türkiye iç hat</option><option value="international">Dış hat</option></select></label>
+            <label class="switch-row"><input name="hasConnection" id="hasConnection" type="checkbox"><span>Aktarmalı uçuyorum</span><span class="switch" aria-hidden="true"></span></label>
+            <div id="connection-fields" class="conditional" hidden>
+              <label>Aktarma havalimanı <input name="via" id="via" list="airports" maxlength="3" pattern="[A-Za-z]{3}" placeholder="FRA" autocomplete="off"></label>
+              <label class="plain-check"><input type="checkbox" name="separateTickets" id="separateTickets"> Uçuşlar ayrı biletlerde</label>
+              <label class="plain-check"><input type="checkbox" name="airportChange" id="airportChange"> Aktarmada havalimanı değişiyor</label>
+              <label>Bagaj son varışa etiketlenecek mi? <select name="throughBag" id="throughBag"><option value="unknown">Henüz bilmiyorum</option><option value="yes">Evet, teyit ettim</option><option value="no">Hayır, aktarmada alacağım</option></select></label>
+            </div>
+          </fieldset>
+          <fieldset class="form-card"><legend><span class="step-number">02</span> Biletin <span class="legend-note">Biletindeki bilgiler esas.</span></legend>
+            <label class="full-field">Uçuşu gerçekleştiren havayolu <select name="airline" id="airline"><option value="TK">Türk Hava Yolları</option><option value="OTHER">Diğer havayolu</option></select></label>
+            <label class="plain-check"><input type="checkbox" name="mixedOperator" id="mixedOperator"> En az bir etap başka havayolu tarafından yapılıyor</label>
+            <div class="field-row"><label>Kabin <select name="cabin" id="cabin"><option value="economy">Economy</option><option value="business">Business</option></select></label><label>Bilet paketi <select name="fare" id="fare"></select></label></div>
+            <div class="baggage-divider"></div>
+            <label class="full-field">Biletindeki kayıtlı bagaj hakkı <select name="baggageType" id="baggageType"><option value="unknown">Henüz bilmiyorum</option><option value="none">Kayıtlı bagaj hakkım yok</option><option value="weight">Toplam kilogram</option><option value="piece">Parça × kilogram</option></select></label>
+            <div id="weight-fields" class="field-row" hidden><label>Toplam hak (kg) <input type="number" id="allowance" name="allowance" min="0" max="500" step="0.1" inputmode="decimal" placeholder="Ör. 20"></label></div>
+            <div id="piece-fields" class="field-row" hidden><label>Parça sayısı <input type="number" id="pieces" name="pieces" min="1" max="10" step="1" inputmode="numeric" placeholder="Ör. 1"></label><label>Her parça en fazla (kg) <input type="number" id="perPiece" name="perPiece" min="1" max="32" step="0.1" inputmode="decimal" placeholder="Ör. 23"></label></div>
+            <div class="field-row"><label><span id="planned-weight-label">Hazırladığın toplam bagaj (kg)</span> <span class="optional">İsteğe bağlı</span><input type="number" name="plannedWeight" id="plannedWeight" min="0" max="500" step="0.1" inputmode="decimal" placeholder="Ör. 18"></label><label id="planned-pieces-field" hidden>Hazırladığın parça sayısı <span class="optional">İsteğe bağlı</span><input type="number" id="plannedPieces" name="plannedPieces" min="0" max="10" step="1" inputmode="numeric" placeholder="Ör. 1"></label></div>
+            <p class="info-note"><span aria-hidden="true">ⓘ</span> Paket adından bagaj hakkı hesaplanmaz. Biletindeki toplam hakkı ekle; statü avantajlarını ikinci kez ekleme.</p>
+          </fieldset>
+          <fieldset class="form-card"><legend><span class="step-number">03</span> İhtiyaçların <span class="legend-note">Sana uyanları seç.</span></legend>
+            <div class="needs-grid">
+              <label class="need-option"><input type="checkbox" name="child" id="child"><span aria-hidden="true">♧</span><b>Çocuk / bebek</b></label>
+              <label class="need-option"><input type="checkbox" name="pet" id="pet"><span aria-hidden="true">♧</span><b>Evcil hayvan</b></label>
+              <label class="need-option"><input type="checkbox" name="assistance" id="assistance"><span aria-hidden="true">♿</span><b>Hareket desteği</b></label>
+              <label class="need-option"><input type="checkbox" name="meal" id="meal"><span aria-hidden="true">♧</span><b>Özel yemek</b></label>
+              <label class="need-option"><input type="checkbox" name="sports" id="sports"><span aria-hidden="true">↗</span><b>Spor ekipmanı</b></label>
+              <label class="need-option"><input type="checkbox" name="powerbank" id="powerbank"><span aria-hidden="true">ϟ</span><b>Powerbank</b></label>
+            </div>
+          </fieldset>
+          <div class="form-submit"><p id="form-error" role="alert" hidden></p><button class="primary-button" type="submit">Hazırlık listemi oluştur <span aria-hidden="true">→</span></button><p class="save-note"><span aria-hidden="true">◉</span> Hesap gerekmez. Listen bu tarayıcıda saklanır.</p></div>
+        </form>
+        <div class="results" id="results">
+          <div id="empty-state" class="empty-state"><div class="empty-icon" aria-hidden="true">✓</div><p class="eyebrow dark">HER ŞEY BİR ARADA</p><h3>Yolculuğunun<br>küçük ayrıntıları.</h3><p>Soldaki bilgileri ekle; belgeler, bagaj ve aktarma adımlarını senin için bir araya getirelim.</p><div class="empty-preview"><span><i>01</i> Bilet & belgeler <b>→</b></span><span><i>02</i> Bagaj hazırlığı <b>→</b></span><span><i>03</i> Havalimanına doğru <b>→</b></span></div><small>Kendi listeni oluşturabilir veya örnek yolculuğu deneyebilirsin.</small></div>
+          <div id="plan-content" hidden>
+            <div class="boarding-card"><div class="boarding-top"><span>YOLCULUK ÖZETİN</span><span id="plan-airline"></span></div><div class="boarding-route" id="plan-route"></div><div class="boarding-details" id="plan-details"></div><div class="boarding-bottom"><span id="plan-baggage"></span><span id="plan-fare"></span></div></div>
+            <div id="dirty-note" class="dirty-note" hidden>Bilgilerin değişti. Güncel liste için “Hazırlık listemi oluştur” düğmesine bas.</div>
+            <div class="progress-card"><div class="progress-head"><div><p class="eyebrow dark">HAZIRLIK DURUMUN</p><h3 id="progress-title" tabindex="-1">Kontrol listesi</h3></div><span id="progress-number">0%</span></div><div class="progress-track" role="progressbar" aria-label="Tamamlanan kontrol maddeleri" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-bar"></span></div><p id="progress-detail" aria-live="polite"></p></div>
+            <div class="checklist-toolbar"><div class="filters" role="group" aria-label="Liste filtresi"><button type="button" data-filter="all" class="selected" aria-pressed="true">Tümü</button><button type="button" data-filter="open" aria-pressed="false">Kalanlar</button></div><button type="button" id="print" class="icon-button">Yazdır <span aria-hidden="true">↗</span></button></div>
+            <div id="checklist"></div><p id="list-empty" class="list-empty" hidden>Kalan madde yok. Kontrol listen tamamlandı.</p>
+            <div class="result-foot"><p id="source-note"></p><p>Bu liste, belge veya uçuşa kabul kararı vermez. Güncel uçuş koşullarını biletinden, havayolundan ve ilgili resmi makamlardan doğrula.</p><div><button type="button" class="text-button" id="download">Listemi indir <span aria-hidden="true">↓</span></button><button type="button" class="text-button subtle" id="clear">Tarayıcı kaydını sil</button></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="about-section" id="about"><div class="container"><p class="eyebrow dark">NASIL ÇALIŞIR?</p><h2>Yolculuğun değişir. Listen de değişir.</h2><div class="about-grid"><article><span>01 / BİLGİLERİN</span><h3>Biletini esas alır.</h3><p>Rota, bagaj hakkı ve ihtiyaçlarını sen eklersin. Paket adından veya statünden gizli bir hak tahmin edilmez.</p></article><article><span>02 / KONTROLLERİN</span><h3>Sana göre hazırlanır.</h3><p>Aktarma, çocuk, özel hizmetler ve bagaj seçimine göre ilgili maddeler eklenir. Gereken resmi kaynak bir tık uzağındadır.</p></article><article><span>03 / SENİN LİSTEN</span><h3>Adım adım tamamlarsın.</h3><p>Kontrol ettiklerini işaretle, kalanları gör, yazdır veya indir. Bilgilerin bu tarayıcıda kalır.</p></article></div></div></section>
+  </main>
+  <footer class="container footer"><div class="footer-brand">Uçuşa<span>Hazır</span><p>Bağımsız, açık kaynak yolcu asistanı.<br>Türk Hava Yolları ile resmi bağlantısı yoktur.</p></div><div><a href="https://github.com/ubeydgencer/ucusa-hazir" target="_blank" rel="noopener noreferrer">Kaynak kod & katkıda bulun ↗</a><p>THY kaynak kontrolü: 10 Ekim 2026 · MIT</p><p>PNR, pasaport numarası veya hesap şifresi istenmez.</p></div></footer>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
