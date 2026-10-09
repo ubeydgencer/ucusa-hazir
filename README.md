@@ -79,6 +79,8 @@ test/planner.test.mjs            # Belirsizlik ve kapsam testleri
 
 MIT lisansı. Katkılar, kaynaklı kural düzeltmeleri ve yeni havayolu sağlayıcıları kabul edilir.
 
+Uçak ikonu [Bootstrap Icons — airplane-fill](https://icons.getbootstrap.com/icons/airplane-fill/) kaynağından alınmıştır. MIT lisans bildirimi `dist/assets/LICENSE-bootstrap-icons.txt` içinde dağıtılır.
+
 ### English
 
 Uçuşa Hazır is an open source passenger preparation assistant, starting with Turkish Airlines. It builds a personal checklist from a route, ticket-declared baggage allowance and travel needs. The interface is Turkish. It runs entirely in the browser without accounts or dependencies. Other and mixed operating carriers receive a generic checklist until their own rules are verified. It does not determine visa eligibility, flight acceptance or connection feasibility. Contributions with official airline sources and scoped tests are welcome.
