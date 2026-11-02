@@ -33,6 +33,11 @@
 
     <section class="container planner" id="planner" aria-labelledby="planner-title">
       <div class="section-heading"><div><p class="eyebrow dark">YOLCULUK MASAN</p><h2 id="planner-title">Küçük kontroller. Rahat bir uçuş.</h2></div><div><button id="example" class="text-button" type="button">Örnek yolculuk <span aria-hidden="true">↗</span></button><button id="return-trip" class="text-button" type="button" hidden>Örneği kapat <span aria-hidden="true">↩</span></button></div></div>
+      <section class="trip-library" aria-label="Kayıtlı yolculuklar">
+        <label for="trip-select">Yolculuklarım</label><select id="trip-select" aria-describedby="library-note"></select>
+        <div class="library-actions"><button id="new-trip" type="button" class="text-button">Yeni yolculuk</button><button id="add-return" type="button" class="text-button">Dönüş listesi ekle</button><button id="discard-changes" type="button" class="text-button" hidden>Değişiklikleri geri al</button><button id="undo-delete" type="button" class="text-button" hidden>Silinen yolculuğu geri al</button></div>
+        <p id="library-note" class="field-hint" role="status"></p>
+      </section>
       <div class="workspace">
         <form id="trip-form" class="trip-form">
           <fieldset class="form-card"><legend><span class="step-number">01</span> Rotan <span class="legend-note">Nereye uçuyorsun?</span></legend>
@@ -78,9 +83,9 @@
             <div class="boarding-card"><div class="boarding-top"><span>YOLCULUK ÖZETİN</span><span id="plan-airline"></span></div><div class="boarding-route" id="plan-route"></div><div class="boarding-details" id="plan-details"></div><div class="boarding-bottom"><span id="plan-baggage"></span><span id="plan-fare"></span></div></div>
             <div id="dirty-note" class="dirty-note" hidden>Bilgilerin değişti. Güncel liste için “Hazırlık listemi oluştur” düğmesine bas.</div>
             <div class="progress-card"><div class="progress-head"><div><p class="eyebrow dark">HAZIRLIK DURUMUN</p><h3 id="progress-title" tabindex="-1">Kontrol listesi</h3></div><span id="progress-number">0%</span></div><div class="progress-track" role="progressbar" aria-label="Tamamlanan kontrol maddeleri" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-bar"></span></div><p id="progress-detail" aria-live="polite"></p></div>
-            <div class="checklist-toolbar"><div class="filters" role="group" aria-label="Liste filtresi"><button type="button" data-filter="all" class="selected" aria-pressed="true">Tümü</button><button type="button" data-filter="open" aria-pressed="false">Kalanlar</button></div><button type="button" id="print" class="icon-button">Yazdır <span aria-hidden="true">↗</span></button></div>
+            <div class="checklist-toolbar"><div class="filters" role="group" aria-label="Liste filtresi"><button type="button" data-filter="all" class="selected" aria-pressed="true">Tümü</button><button type="button" data-filter="open" aria-pressed="false">Kalanlar</button></div><button type="button" id="print" class="icon-button">Seçili listeyi yazdır <span aria-hidden="true">↗</span></button></div>
             <div id="checklist"></div><p id="list-empty" class="list-empty" hidden>Kalan madde yok. Kontrol listen tamamlandı.</p>
-            <div class="result-foot"><p id="source-note"></p><p>Bu liste, belge veya uçuşa kabul kararı vermez. Güncel uçuş koşullarını biletinden, havayolundan ve ilgili resmi makamlardan doğrula.</p><div><button type="button" class="text-button" id="download">Listemi indir <span aria-hidden="true">↓</span></button><button type="button" class="text-button subtle" id="clear">Tarayıcı kaydını sil</button></div></div>
+            <div class="result-foot"><p id="source-note"></p><p>Bu liste, belge veya uçuşa kabul kararı vermez. Güncel uçuş koşullarını biletinden, havayolundan ve ilgili resmi makamlardan doğrula.</p><div><button type="button" class="text-button" id="download">Seçili listeyi indir <span aria-hidden="true">↓</span></button><button type="button" class="text-button subtle" id="clear">Bu yolculuğu sil</button></div></div>
           </div>
         </div>
       </div>

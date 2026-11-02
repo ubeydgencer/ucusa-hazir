@@ -2,9 +2,11 @@ import { airlines } from './data/airlines.js';
 import { airports } from './data/airports.js';
 import { buildPlan, itemSignature, reconcileCompleted, airportLabel } from './lib/planner.js';
 
+import { emptyLibrary, loadLibrary, persistLibrary, upsertTrip, completeItem, removeTrip, returnDraft, tripLabel, tripMarkdown } from './lib/trips.js';
+
 const $ = id => document.getElementById(id);
 const form = $('trip-form');
-const storageKey = 'ucusa-hazir-v1';
+let library = emptyLibrary(), currentId = null, pendingKind = 'trip', pendingReturnOf = null, deletedEntry = null;
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const futureDate = () => { const d = new Date(); d.setDate(d.getDate() + 7); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 let plan = null, completed = {}, filter = 'all', dirty = false, example = false, baseline = '', toastTimer, exampleBackup = null;
@@ -17,9 +19,38 @@ function toast(message) {
   toastTimer = setTimeout(() => { $('toast').hidden = true; }, 4500);
 }
 function save() {
-  if (example) return;
-  try { localStorage.setItem(storageKey, JSON.stringify({ version:1, trip:plan.trip, completed })); }
-  catch { if (canStore) toast('Tarayıcı kaydı kullanılamıyor. Listen açık kaldığı sürece kullanılabilir; kapatmadan indirebilirsin.'); canStore = false; }
+  if (example || !canStore) return;
+  try { persistLibrary(localStorage,library); }
+  catch { canStore = false; toast('Tarayıcı kaydı kullanılamıyor. Sekmeyi kapatmadan listelerini indir.'); }
+}
+function renderLibrary() {
+  $('trip-select').innerHTML = (!currentId ? `<option value="">${pendingKind==='return'?'Yeni dönüş listesi':'Yeni yolculuk'}</option>` : '') + library.entries.map(e=>`<option value="${escape(e.id)}">${escape(tripLabel(e))}</option>`).join('');
+  $('trip-select').value = currentId || '';
+  $('trip-select').disabled = example || dirty || !library.entries.length;
+  $('new-trip').disabled = example || dirty;
+  $('add-return').disabled = example || dirty || !currentId || !plan;
+  $('discard-changes').hidden = !dirty || example;
+  $('undo-delete').hidden = !deletedEntry || example;
+  $('undo-delete').disabled = dirty;
+  $('clear').disabled = dirty;
+  $('library-note').textContent = !canStore ? 'Tarayıcıya kaydedilemiyor. Sekmeyi kapatmadan listelerini indir.' : example ? 'Örnek kaydedilmez; kapatınca kendi yolculukların ve taslağın geri gelir.' : dirty ? 'Kaydı değiştirmeden önce listeyi güncelle veya değişiklikleri geri al.' : 'Her yönün bilet bilgileri ve onayları ayrıdır. Yalnız seçili liste yazdırılır, indirilir veya silinir.';
+}
+function activate(id, persist = true) {
+  const entry = library.entries.find(e=>e.id===id);
+  if (!entry) return;
+  currentId=id; library={...library,activeId:id};
+  plan=buildPlan(entry.trip); completed=reconcileCompleted(plan,entry.completed); dirty=false; example=false; filter='all';
+  form.reset(); populate(plan.trip); baseline=JSON.stringify(rawTrip()); $('form-error').hidden=true;
+  if (persist) save(); render();
+}
+function startDraft(returnEntry = null) {
+  currentId=null; pendingKind=returnEntry?'return':'trip'; pendingReturnOf=returnEntry?.id || null;
+  plan=null; completed={}; dirty=false; filter='all'; example=false;
+  form.reset(); updateFares(returnEntry?'OTHER':'TK');
+  if (returnEntry) populate(returnDraft(returnEntry));
+  else { $('origin').value='IST'; $('date').value=futureDate(); syncFields(); }
+  baseline=JSON.stringify(rawTrip()); $('form-error').hidden=true; render();
+  if (returnEntry) toast('Dönüş için tarih, işletici, paket ve biletteki bagaj hakkını ayrı gir.');
 }
 function rawTrip() {
   const data = new FormData(form);
@@ -60,13 +91,14 @@ function syncFields() {
   for (const id of ['origin','destination']) { const code = $(id).value.trim().toUpperCase(); $(id + '-label').textContent = airports[code]?.name || 'Üç harfli havalimanı kodu'; }
 }
 function setDirty() {
-  if (!plan) return;
   dirty = JSON.stringify(rawTrip()) !== baseline;
   $('dirty-note').hidden = !dirty;
   $('download').disabled = dirty; $('print').disabled = dirty;
   document.querySelectorAll('.check-item>input').forEach(input => { input.disabled = dirty; });
+  renderLibrary();
 }
 function render() {
+  renderLibrary();
   $('empty-state').hidden = Boolean(plan); $('plan-content').hidden = !plan;
   $('return-trip').hidden = !example;
   $('example').hidden = example;
@@ -74,7 +106,7 @@ function render() {
   if (!plan) return;
   const t = plan.trip;
   $('plan-airline').textContent = plan.airlineName + (t.mixedOperator ? ' · karma operatör' : '');
-  document.querySelector('.boarding-top>span:first-child').textContent = example ? 'ÖRNEK YOLCULUK' : 'YOLCULUK ÖZETİN';
+  document.querySelector('.boarding-top>span:first-child').textContent = example ? 'ÖRNEK YOLCULUK' : library.entries.find(e=>e.id===currentId)?.kind==='return' ? 'DÖNÜŞ YOLCULUĞUN' : 'YOLCULUK ÖZETİN';
   $('plan-route').innerHTML = `<div class="boarding-airport"><b>${escape(t.origin)}</b><span>${escape(airportLabel(t.origin))}</span></div><div class="boarding-line"><span aria-hidden="true">↗</span></div><div class="boarding-airport"><b>${escape(t.destination)}</b><span>${escape(airportLabel(t.destination))}</span></div>`;
   const dateText = new Intl.DateTimeFormat('tr-TR',{day:'numeric',month:'long',year:'numeric'}).format(new Date(t.date+'T12:00:00'));
   $('plan-details').textContent = [dateText, t.time ? `${t.time} · kalkış yerel saati` : '', t.international ? 'Dış hat' : 'Türkiye iç hat', t.via ? `${t.via} aktarmalı${t.airportChange ? ' · havalimanı değişimi' : ''}` : 'Direkt'].filter(Boolean).join(' · ');
@@ -105,31 +137,43 @@ function render() {
   document.querySelectorAll('[data-filter]').forEach(button => { const selected = button.dataset.filter === filter; button.classList.toggle('selected',selected); button.setAttribute('aria-pressed',selected); });
   $('dirty-note').hidden = !dirty; $('download').disabled = dirty; $('print').disabled = dirty;
 }
-function generate(isExample = false, moveFocus = true) {
+function generate(isExample = example, moveFocus = true) {
   try {
     const next = buildPlan(rawTrip());
-    completed = isExample ? {} : reconcileCompleted(next, completed);
-    plan = next; dirty = false; example = isExample;
-    baseline = JSON.stringify(rawTrip());
-    $('form-error').hidden = true;
-    if (!isExample) exampleBackup = null;
-    filter = 'all'; save(); render();
+    if (isExample) { completed = example ? reconcileCompleted(next,completed) : {}; plan=next; }
+    else {
+      library=upsertTrip(library,next.trip,{...(currentId?{id:currentId}:{}),kind:pendingKind,returnOf:pendingReturnOf});
+      currentId=library.activeId;
+      const entry=library.entries.find(e=>e.id===currentId);
+      plan=next; completed={...entry.completed}; exampleBackup=null;
+    }
+    dirty=false; example=isExample; baseline=JSON.stringify(rawTrip()); $('form-error').hidden=true;
+    filter='all'; save(); render();
     if (moveFocus) { $('progress-title').focus({preventScroll:true}); if (matchMedia('(max-width:760px)').matches) $('results').scrollIntoView({behavior:'smooth',block:'start'}); }
-  } catch (error) { $('form-error').textContent = error.message; $('form-error').hidden = false; }
+  } catch (error) { $('form-error').textContent=error.message; $('form-error').hidden=false; }
 }
+$('trip-select').addEventListener('change',event=>{ if (!dirty && !example) { if(event.target.value) activate(event.target.value); else startDraft(); } });
+$('new-trip').addEventListener('click',()=>{ if(!dirty && !example) startDraft(); });
+$('add-return').addEventListener('click',()=>{ if(!dirty && !example && currentId) startDraft(library.entries.find(e=>e.id===currentId)); });
+$('discard-changes').addEventListener('click',()=>{ if(example) return; form.reset(); populate(JSON.parse(baseline)); dirty=false; $('form-error').hidden=true; render(); });
+$('undo-delete').addEventListener('click',()=>{
+  if (!deletedEntry || dirty || example) return;
+  if (!library.entries.some(e=>e.id===deletedEntry.id)) library={...library,entries:[...library.entries,deletedEntry]};
+  const id=deletedEntry.id; deletedEntry=null; activate(id); toast('Silinen yolculuk geri alındı.');
+});
 form.addEventListener('input',() => { syncFields(); setDirty(); });
 form.addEventListener('change', event => {
   if (event.target.id === 'airline') updateFares(event.target.value);
   if (event.target.id === 'baggageType') { $('plannedWeight').value = ''; $('plannedPieces').value = ''; }
   syncFields(); setDirty();
 });
-form.addEventListener('submit',event => { event.preventDefault(); generate(); });
+form.addEventListener('submit',event => { event.preventDefault(); generate(example); });
 $('example').addEventListener('click',() => {
   if (!example) exampleBackup = {plan,completed:{...completed},filter,dirty,baseline,raw:rawTrip()};
   form.reset();
   populate({origin:'IST',destination:'LHR',date:futureDate(),time:'10:30',airline:'TK',cabin:'economy',fare:'EcoFly',routeType:'auto',baggageType:'piece',pieces:1,perPiece:23,plannedWeight:20,plannedPieces:1,needs:{powerbank:true}});
   generate(true);
-  toast('Örnek yolculuk yüklendi. Kendi biletine göre düzenleyebilirsin.');
+  toast('Örnek yüklendi; kaydedilmez. Örneği kapatınca kendi kayıtlarına dönersin.');
 });
 $('return-trip').addEventListener('click',() => {
   if (!exampleBackup) return;
@@ -142,7 +186,8 @@ $('checklist').addEventListener('change', event => {
   if (dirty || !plan) return;
   const item = plan.items.find(item => item.id === event.target.dataset.item);
   if (!item) return;
-  if (event.target.checked) completed[item.id] = itemSignature(item,plan.trip); else delete completed[item.id];
+  if (example) { if (event.target.checked) completed[item.id]=itemSignature(item,plan.trip); else delete completed[item.id]; }
+  else { library=completeItem(library,currentId,item.id,event.target.checked); completed={...library.entries.find(e=>e.id===currentId).completed}; }
   save();
   // Yeniden çizimden sonra odak ve ekran konumu korunur.
   const itemId = event.target.id;
@@ -154,26 +199,27 @@ $('print').addEventListener('click',() => { if (!dirty && plan) { const previous
 $('download').addEventListener('click',() => {
   if (!plan || dirty) return;
   const t = plan.trip;
-  const content = [`# Uçuşa Hazır${example ? ' — Örnek yolculuk' : ''}`, '', `${t.origin} → ${t.via ? t.via+' → ' : ''}${t.destination} · ${t.date}${t.time ? ' '+t.time+' (kalkış yerel saati)' : ''}`, `${plan.airlineName} · ${t.fare}`, '', ...plan.items.flatMap(item => [`- [${completed[item.id] ? 'x' : ' '}] ${item.title} — ${item.timing}`, `  ${item.detail}`, ...(item.source ? [`  Kaynak: ${item.source.url} (kontrol: ${item.source.verifiedAt})`] : []), '']), 'Bu liste uçuşa kabul veya belge uygunluğu kararı vermez. Güncel koşulları biletinden, havayolundan ve resmi makamlardan doğrula.', '', 'Açık kaynak: https://github.com/ubeydgencer/ucusa-hazir'].join('\n');
+  const selected=example?{kind:'trip',trip:plan.trip,completed}:library.entries.find(e=>e.id===currentId);
+  const content=tripMarkdown(selected).replace('# Uçuşa Hazır —',example?'# Uçuşa Hazır — ÖRNEK —':'# Uçuşa Hazır —');
   const url = URL.createObjectURL(new Blob([content],{type:'text/plain;charset=utf-8'}));
-  const link = document.createElement('a'); link.href = url; link.download = `ucusa-hazir-${t.origin}-${t.destination}-${t.date}.md`; link.click();
+  const link = document.createElement('a'); link.href = url; link.download = `ucusa-hazir-${t.origin}-${t.destination}-${t.date}-${example?'ornek':currentId}.md`; link.click();
   setTimeout(() => URL.revokeObjectURL(url),1000);
   toast('Hazırlık listen indirildi.');
 });
 $('clear').addEventListener('click',() => {
-  try { localStorage.removeItem(storageKey); } catch {}
-  plan = null; completed = {}; dirty = false; example = false; baseline = ''; filter = 'all';
-  form.reset(); updateFares('TK'); $('origin').value = 'IST'; $('date').value = futureDate(); syncFields(); render();
-  $('form-error').hidden = true;
-  $('origin').focus({preventScroll:true});
-  toast('Bu tarayıcıdaki yolculuk kaydı silindi.');
+  if (!currentId || example || dirty) return;
+  deletedEntry=library.entries.find(e=>e.id===currentId);
+  library=removeTrip(library,currentId); save();
+  if(library.activeId) activate(library.activeId,false); else startDraft();
+  toast('Yalnız seçili yolculuk silindi. Geri al düğmesi bu sekmede kullanılabilir.');
 });
 
-updateFares('TK'); $('origin').value = 'IST'; $('date').value = futureDate(); syncFields();
+startDraft();
 try {
-  const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
-  if (saved?.version === 1 && saved.trip) {
-    plan = buildPlan(saved.trip); completed = reconcileCompleted(plan,saved.completed || {}); example = false;
-    populate(plan.trip); baseline = JSON.stringify(rawTrip()); render();
-  }
-} catch { plan = null; completed = {}; }
+  const loaded=loadLibrary(localStorage);
+  library=loaded.library; canStore=!loaded.blocked;
+  if(library.activeId) activate(library.activeId,false);
+  if(loaded.migrated) { save(); toast(canStore?'Önceki yolculuğun ve geçerli onayların taşındı.':'Eski kayıt korundu; taşıma kaydedilemedi. Listeni indirebilirsin.'); }
+  if(loaded.blocked) toast('Kayıt okunamadı. Önceki tarayıcı verisinin üzerine yazılmayacak.');
+} catch { canStore=false; toast('Tarayıcı kaydı okunamıyor. Listelerini kapatmadan indir.'); }
+render();
